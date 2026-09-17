@@ -4,11 +4,14 @@ import (
 	"errors"
 	"math"
 	"testing"
+
+	"github.com/df-mc/dragonfly/server/entity"
+	"github.com/df-mc/dragonfly/server/world"
 )
 
 func TestCalculateAppliesModifiersInPMMPOrder(t *testing.T) {
 	result, err := Calculate(Input{
-		Cause:                       CauseEntityAttack,
+		Source:                      entity.AttackDamageSource{},
 		BaseDamage:                  10,
 		ArmorPoints:                 10,
 		ResistanceLevel:             2,
@@ -31,7 +34,7 @@ func TestCalculateAppliesModifiersInPMMPOrder(t *testing.T) {
 func TestCalculatePreviousDamageCooldown(t *testing.T) {
 	previous := 4.0
 	result, err := Calculate(Input{
-		Cause:              CauseEntityAttack,
+		Source:             entity.AttackDamageSource{},
 		BaseDamage:         4,
 		PreviousBaseDamage: &previous,
 	})
@@ -46,7 +49,7 @@ func TestCalculatePreviousDamageCooldown(t *testing.T) {
 
 func TestCalculateIncludesExistingEventModifiers(t *testing.T) {
 	result, err := Calculate(Input{
-		Cause:                CauseEntityAttack,
+		Source:               entity.AttackDamageSource{},
 		BaseDamage:           5,
 		InitialModifierTotal: 3,
 		ArmorPoints:          5,
@@ -60,9 +63,10 @@ func TestCalculateIncludesExistingEventModifiers(t *testing.T) {
 
 func TestCalculateCauseExceptionsAndHelmet(t *testing.T) {
 	result, err := Calculate(Input{
-		Cause:           CauseFallingBlock,
+		Source:          entity.AttackDamageSource{},
 		BaseDamage:      8,
 		ArmorPoints:     5,
+		FallingBlock:    true,
 		WearingHelmet:   true,
 		ResistanceLevel: 1,
 	})
@@ -73,7 +77,7 @@ func TestCalculateCauseExceptionsAndHelmet(t *testing.T) {
 	assertClose(t, result.FinalDamage, 3.84)
 
 	voidResult, err := Calculate(Input{
-		Cause:           CauseVoid,
+		Source:          entity.VoidDamageSource{},
 		BaseDamage:      8,
 		ArmorPoints:     20,
 		ResistanceLevel: 5,
@@ -85,11 +89,15 @@ func TestCalculateCauseExceptionsAndHelmet(t *testing.T) {
 }
 
 func TestCalculateValidatesInputs(t *testing.T) {
-	_, err := Calculate(Input{BaseDamage: -1})
+	_, err := Calculate(Input{})
+	if !errors.Is(err, ErrNilDamageSource) {
+		t.Fatalf("expected ErrNilDamageSource, got %v", err)
+	}
+	_, err = Calculate(Input{Source: entity.AttackDamageSource{}, BaseDamage: -1})
 	if !errors.Is(err, ErrNegativeInput) {
 		t.Fatalf("expected ErrNegativeInput, got %v", err)
 	}
-	_, err = Calculate(Input{BaseDamage: 1, EnchantmentProtectionFactor: 1, ProtectionRoll: 49})
+	_, err = Calculate(Input{Source: entity.AttackDamageSource{}, BaseDamage: 1, EnchantmentProtectionFactor: 1, ProtectionRoll: 49})
 	if !errors.Is(err, ErrInvalidProtectionRoll) {
 		t.Fatalf("expected ErrInvalidProtectionRoll, got %v", err)
 	}
@@ -97,25 +105,32 @@ func TestCalculateValidatesInputs(t *testing.T) {
 
 func TestEnchantmentProtectionFactor(t *testing.T) {
 	tests := []struct {
-		kind  ProtectionKind
-		level int
-		cause Cause
-		want  int
+		kind   ProtectionKind
+		level  int
+		source world.DamageSource
+		want   int
 	}{
-		{ProtectionAll, 4, CauseEntityAttack, 5},
-		{ProtectionFire, 4, CauseLava, 9},
-		{ProtectionFeatherFalling, 4, CauseFall, 18},
-		{ProtectionBlast, 4, CauseEntityExplosion, 11},
-		{ProtectionProjectile, 4, CauseProjectile, 11},
-		{ProtectionProjectile, 4, CauseEntityAttack, 0},
-		{ProtectionAll, 0, CauseEntityAttack, 0},
+		{ProtectionAll, 4, entity.AttackDamageSource{}, 5},
+		{ProtectionFire, 4, fireDamageSource{}, 9},
+		{ProtectionFeatherFalling, 4, entity.FallDamageSource{}, 18},
+		{ProtectionBlast, 4, entity.ExplosionDamageSource{}, 11},
+		{ProtectionProjectile, 4, entity.ProjectileDamageSource{}, 11},
+		{ProtectionProjectile, 4, entity.AttackDamageSource{}, 0},
+		{ProtectionAll, 0, entity.AttackDamageSource{}, 0},
 	}
 	for _, test := range tests {
-		if got := EnchantmentProtectionFactor(test.kind, test.level, test.cause); got != test.want {
-			t.Fatalf("kind %d level %d cause %d: got %d, want %d", test.kind, test.level, test.cause, got, test.want)
+		if got := EnchantmentProtectionFactor(test.kind, test.level, test.source); got != test.want {
+			t.Fatalf("kind %d level %d source %T: got %d, want %d", test.kind, test.level, test.source, got, test.want)
 		}
 	}
 }
+
+type fireDamageSource struct{}
+
+func (fireDamageSource) ReducedByArmour() bool     { return true }
+func (fireDamageSource) ReducedByResistance() bool { return true }
+func (fireDamageSource) Fire() bool                { return true }
+func (fireDamageSource) IgnoreTotem() bool         { return false }
 
 func assertClose(t *testing.T, got, want float64) {
 	t.Helper()

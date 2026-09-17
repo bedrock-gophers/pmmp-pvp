@@ -1,6 +1,6 @@
 # pmmp-pvp
 
-`pmmp-pvp` provides small, deterministic Go implementations of PocketMine-MP's damage modifier and knockback motion calculations. It has no Dragonfly dependency, so adapters can translate framework types without tying the formulas to a particular server release.
+`pmmp-pvp` provides small, deterministic Go implementations of PocketMine-MP's damage modifier and knockback motion calculations for Dragonfly. Its APIs use Dragonfly's `world.DamageSource` and `mgl64.Vec3` types directly.
 
 The behavior is pinned to [PocketMine-MP 5.43.1](https://github.com/pmmp/PocketMine-MP/tree/5.43.1) (`763354d`). Random values are supplied by the caller, making combat behavior reproducible in tests.
 
@@ -15,7 +15,7 @@ go get github.com/bedrock-gophers/pmmp-pvp/knockback
 
 ```go
 result, err := damage.Calculate(damage.Input{
-	Cause:                       damage.CauseEntityAttack,
+	Source:                      entity.AttackDamageSource{Attacker: attacker},
 	BaseDamage:                  8,
 	ArmorPoints:                 10,
 	ResistanceLevel:             1,
