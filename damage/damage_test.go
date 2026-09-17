@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/df-mc/dragonfly/server/entity"
+	"github.com/df-mc/dragonfly/server/item"
+	"github.com/df-mc/dragonfly/server/item/enchantment"
 	"github.com/df-mc/dragonfly/server/world"
 )
 
@@ -105,22 +107,20 @@ func TestCalculateValidatesInputs(t *testing.T) {
 
 func TestEnchantmentProtectionFactor(t *testing.T) {
 	tests := []struct {
-		kind   ProtectionKind
-		level  int
-		source world.DamageSource
-		want   int
+		enchantment item.Enchantment
+		source      world.DamageSource
+		want        int
 	}{
-		{ProtectionAll, 4, entity.AttackDamageSource{}, 5},
-		{ProtectionFire, 4, fireDamageSource{}, 9},
-		{ProtectionFeatherFalling, 4, entity.FallDamageSource{}, 18},
-		{ProtectionBlast, 4, entity.ExplosionDamageSource{}, 11},
-		{ProtectionProjectile, 4, entity.ProjectileDamageSource{}, 11},
-		{ProtectionProjectile, 4, entity.AttackDamageSource{}, 0},
-		{ProtectionAll, 0, entity.AttackDamageSource{}, 0},
+		{item.NewEnchantment(enchantment.Protection, 4), entity.AttackDamageSource{}, 5},
+		{item.NewEnchantment(enchantment.FireProtection, 4), fireDamageSource{}, 9},
+		{item.NewEnchantment(enchantment.FeatherFalling, 4), entity.FallDamageSource{}, 18},
+		{item.NewEnchantment(enchantment.BlastProtection, 4), entity.ExplosionDamageSource{}, 11},
+		{item.NewEnchantment(enchantment.ProjectileProtection, 4), entity.ProjectileDamageSource{}, 11},
+		{item.NewEnchantment(enchantment.ProjectileProtection, 4), entity.AttackDamageSource{}, 0},
 	}
 	for _, test := range tests {
-		if got := EnchantmentProtectionFactor(test.kind, test.level, test.source); got != test.want {
-			t.Fatalf("kind %d level %d source %T: got %d, want %d", test.kind, test.level, test.source, got, test.want)
+		if got := EnchantmentProtectionFactor(test.enchantment, test.source); got != test.want {
+			t.Fatalf("enchantment %T level %d source %T: got %d, want %d", test.enchantment.Type(), test.enchantment.Level(), test.source, got, test.want)
 		}
 	}
 }

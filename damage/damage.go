@@ -6,44 +6,36 @@ import (
 	"math"
 
 	"github.com/df-mc/dragonfly/server/entity"
+	"github.com/df-mc/dragonfly/server/item"
+	dragonflyenchantment "github.com/df-mc/dragonfly/server/item/enchantment"
 	"github.com/df-mc/dragonfly/server/world"
-)
-
-// ProtectionKind identifies a vanilla armour protection enchantment.
-type ProtectionKind uint8
-
-const (
-	ProtectionAll ProtectionKind = iota
-	ProtectionFire
-	ProtectionFeatherFalling
-	ProtectionBlast
-	ProtectionProjectile
 )
 
 // EnchantmentProtectionFactor returns the EPF contributed by one armour
 // enchantment for source. It implements PMMP's ProtectionEnchantment formula
 // and maps applicability from Dragonfly damage sources.
-func EnchantmentProtectionFactor(kind ProtectionKind, level int, source world.DamageSource) int {
+func EnchantmentProtectionFactor(ench item.Enchantment, source world.DamageSource) int {
+	level := ench.Level()
 	if level <= 0 {
 		return 0
 	}
 	modifier := 0.0
-	switch kind {
-	case ProtectionAll:
+	switch ench.Type() {
+	case dragonflyenchantment.Protection:
 		modifier = 0.75
-	case ProtectionFire:
+	case dragonflyenchantment.FireProtection:
 		if source != nil && source.Fire() {
 			modifier = 1.25
 		}
-	case ProtectionFeatherFalling:
+	case dragonflyenchantment.FeatherFalling:
 		if _, ok := source.(entity.FallDamageSource); ok {
 			modifier = 2.5
 		}
-	case ProtectionBlast:
+	case dragonflyenchantment.BlastProtection:
 		if _, ok := source.(entity.ExplosionDamageSource); ok {
 			modifier = 1.5
 		}
-	case ProtectionProjectile:
+	case dragonflyenchantment.ProjectileProtection:
 		if _, ok := source.(entity.ProjectileDamageSource); ok {
 			modifier = 1.5
 		}
