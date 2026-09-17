@@ -36,8 +36,8 @@ Use `damage.EnchantmentProtectionFactor` to calculate the total EPF from individ
 
 ```go
 result, err := knockback.Calculate(knockback.Input{
-	Direction:      knockback.Vec3{X: targetX - attackerX, Z: targetZ - attackerZ},
-	CurrentMotion:  knockback.Vec3{X: vx, Y: vy, Z: vz},
+	Direction:      mgl64.Vec3{targetX - attackerX, 0, targetZ - attackerZ},
+	CurrentMotion:  mgl64.Vec3{vx, vy, vz},
 	Force:          0.4,
 	Resistance:     0.0,
 	ResistanceRoll: randomFloat, // PMMP: mt_rand()/mt_getrandmax()

@@ -4,12 +4,14 @@ import (
 	"errors"
 	"math"
 	"testing"
+
+	"github.com/go-gl/mathgl/mgl64"
 )
 
 func TestCalculateMatchesPMMPMotion(t *testing.T) {
 	result, err := Calculate(Input{
-		Direction:      Vec3{X: 3, Z: 4},
-		CurrentMotion:  Vec3{X: 0.2, Y: 0.6, Z: -0.2},
+		Direction:      mgl64.Vec3{3, 0, 4},
+		CurrentMotion:  mgl64.Vec3{0.2, 0.6, -0.2},
 		Force:          0.4,
 		ResistanceRoll: 1,
 	})
@@ -19,16 +21,16 @@ func TestCalculateMatchesPMMPMotion(t *testing.T) {
 	if !result.Applied {
 		t.Fatal("expected knockback to be applied")
 	}
-	assertClose(t, result.Motion.X, 0.34)
-	assertClose(t, result.Motion.Y, 0.4)
-	assertClose(t, result.Motion.Z, 0.22)
+	assertClose(t, result.Motion[0], 0.34)
+	assertClose(t, result.Motion[1], 0.4)
+	assertClose(t, result.Motion[2], 0.22)
 }
 
 func TestCalculateUsesExplicitVerticalLimit(t *testing.T) {
 	limit := 0.7
 	result, err := Calculate(Input{
-		Direction:      Vec3{X: 1},
-		CurrentMotion:  Vec3{Y: 1},
+		Direction:      mgl64.Vec3{1, 0, 0},
+		CurrentMotion:  mgl64.Vec3{0, 1, 0},
 		Force:          0.4,
 		VerticalLimit:  &limit,
 		ResistanceRoll: 1,
@@ -36,14 +38,14 @@ func TestCalculateUsesExplicitVerticalLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertClose(t, result.Motion.Y, 0.7)
+	assertClose(t, result.Motion[1], 0.7)
 }
 
 func TestCalculateUsesExplicitVerticalForce(t *testing.T) {
 	verticalForce := 0.39
 	result, err := Calculate(Input{
-		Direction:      Vec3{X: 1},
-		CurrentMotion:  Vec3{Y: -0.2},
+		Direction:      mgl64.Vec3{1, 0, 0},
+		CurrentMotion:  mgl64.Vec3{0, -0.2, 0},
 		Force:          0.4,
 		VerticalForce:  &verticalForce,
 		VerticalLimit:  &verticalForce,
@@ -52,14 +54,14 @@ func TestCalculateUsesExplicitVerticalForce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertClose(t, result.Motion.Y, 0.29)
+	assertClose(t, result.Motion[1], 0.29)
 }
 
 func TestCalculateSkipsResistedAndZeroDirection(t *testing.T) {
-	current := Vec3{X: 1, Y: 2, Z: 3}
+	current := mgl64.Vec3{1, 2, 3}
 	for name, input := range map[string]Input{
 		"resisted": {
-			Direction: Vec3{X: 1}, CurrentMotion: current, Force: 0.4,
+			Direction: mgl64.Vec3{1, 0, 0}, CurrentMotion: current, Force: 0.4,
 			Resistance: 0.5, ResistanceRoll: 0.5,
 		},
 		"zero direction": {CurrentMotion: current, Force: 0.4, ResistanceRoll: 1},

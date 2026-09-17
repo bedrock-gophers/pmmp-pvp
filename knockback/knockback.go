@@ -4,22 +4,17 @@ package knockback
 import (
 	"errors"
 	"math"
-)
 
-// Vec3 is a three-dimensional velocity or direction vector.
-type Vec3 struct {
-	X float64
-	Y float64
-	Z float64
-}
+	"github.com/go-gl/mathgl/mgl64"
+)
 
 // Input contains the state used by PMMP to calculate knockback. Direction.Y is
 // ignored. ResistanceRoll corresponds to mt_rand()/mt_getrandmax() and must be
 // in [0, 1]. A nil VerticalForce uses Force, preserving stock PMMP behaviour.
 // A nil VerticalLimit also uses Force, as PMMP does by default.
 type Input struct {
-	Direction      Vec3
-	CurrentMotion  Vec3
+	Direction      mgl64.Vec3
+	CurrentMotion  mgl64.Vec3
 	Force          float64
 	VerticalForce  *float64
 	VerticalLimit  *float64
@@ -29,7 +24,7 @@ type Input struct {
 
 // Result is the resulting motion and whether knockback was applied.
 type Result struct {
-	Motion  Vec3
+	Motion  mgl64.Vec3
 	Applied bool
 }
 
@@ -55,7 +50,7 @@ func Calculate(in Input) (Result, error) {
 	}
 
 	result := Result{Motion: in.CurrentMotion}
-	length := math.Hypot(in.Direction.X, in.Direction.Z)
+	length := math.Hypot(in.Direction[0], in.Direction[2])
 	if length <= 0 || in.ResistanceRoll <= in.Resistance {
 		return result, nil
 	}
@@ -64,17 +59,17 @@ func Calculate(in Input) (Result, error) {
 	if in.VerticalForce != nil {
 		verticalForce = *in.VerticalForce
 	}
-	result.Motion = Vec3{
-		X: in.CurrentMotion.X/2 + in.Direction.X/length*in.Force,
-		Y: in.CurrentMotion.Y/2 + verticalForce,
-		Z: in.CurrentMotion.Z/2 + in.Direction.Z/length*in.Force,
+	result.Motion = mgl64.Vec3{
+		in.CurrentMotion[0]/2 + in.Direction[0]/length*in.Force,
+		in.CurrentMotion[1]/2 + verticalForce,
+		in.CurrentMotion[2]/2 + in.Direction[2]/length*in.Force,
 	}
 	limit := in.Force
 	if in.VerticalLimit != nil {
 		limit = *in.VerticalLimit
 	}
-	if result.Motion.Y > limit {
-		result.Motion.Y = limit
+	if result.Motion[1] > limit {
+		result.Motion[1] = limit
 	}
 	result.Applied = true
 	return result, nil
