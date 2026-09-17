@@ -51,6 +51,8 @@ if result.Applied {
 
 The core intentionally excludes arena boundaries, combo rules, item parsing, and framework-specific event handling.
 
+`VerticalForce` may be supplied separately for servers with independently configurable horizontal and vertical knockback. Leaving it nil preserves stock PMMP behaviour.
+
 ## License
 
 MIT

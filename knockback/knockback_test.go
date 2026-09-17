@@ -39,6 +39,22 @@ func TestCalculateUsesExplicitVerticalLimit(t *testing.T) {
 	assertClose(t, result.Motion.Y, 0.7)
 }
 
+func TestCalculateUsesExplicitVerticalForce(t *testing.T) {
+	verticalForce := 0.39
+	result, err := Calculate(Input{
+		Direction:      Vec3{X: 1},
+		CurrentMotion:  Vec3{Y: -0.2},
+		Force:          0.4,
+		VerticalForce:  &verticalForce,
+		VerticalLimit:  &verticalForce,
+		ResistanceRoll: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertClose(t, result.Motion.Y, 0.29)
+}
+
 func TestCalculateSkipsResistedAndZeroDirection(t *testing.T) {
 	current := Vec3{X: 1, Y: 2, Z: 3}
 	for name, input := range map[string]Input{

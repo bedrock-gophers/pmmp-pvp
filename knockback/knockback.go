@@ -15,11 +15,13 @@ type Vec3 struct {
 
 // Input contains the state used by PMMP to calculate knockback. Direction.Y is
 // ignored. ResistanceRoll corresponds to mt_rand()/mt_getrandmax() and must be
-// in [0, 1]. A nil VerticalLimit uses Force, as PMMP does by default.
+// in [0, 1]. A nil VerticalForce uses Force, preserving stock PMMP behaviour.
+// A nil VerticalLimit also uses Force, as PMMP does by default.
 type Input struct {
 	Direction      Vec3
 	CurrentMotion  Vec3
 	Force          float64
+	VerticalForce  *float64
 	VerticalLimit  *float64
 	Resistance     float64
 	ResistanceRoll float64
@@ -42,6 +44,9 @@ func Calculate(in Input) (Result, error) {
 	if in.Force < 0 {
 		return Result{}, ErrNegativeForce
 	}
+	if in.VerticalForce != nil && *in.VerticalForce < 0 {
+		return Result{}, ErrNegativeForce
+	}
 	if in.Resistance < 0 || in.Resistance > 1 {
 		return Result{}, ErrInvalidResistance
 	}
@@ -55,9 +60,13 @@ func Calculate(in Input) (Result, error) {
 		return result, nil
 	}
 
+	verticalForce := in.Force
+	if in.VerticalForce != nil {
+		verticalForce = *in.VerticalForce
+	}
 	result.Motion = Vec3{
 		X: in.CurrentMotion.X/2 + in.Direction.X/length*in.Force,
-		Y: in.CurrentMotion.Y/2 + in.Force,
+		Y: in.CurrentMotion.Y/2 + verticalForce,
 		Z: in.CurrentMotion.Z/2 + in.Direction.Z/length*in.Force,
 	}
 	limit := in.Force
