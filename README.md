@@ -30,6 +30,7 @@ health.Reduce(result.FinalDamage)
 ```
 
 Damage modifiers are applied in PMMP order: previous-hit cooldown, armor, resistance, armor enchantments, absorption, then falling-block helmet reduction.
+Use `damage.EnchantmentProtectionFactor` to calculate the total EPF from individual vanilla armour enchantments.
 
 ## Knockback
 

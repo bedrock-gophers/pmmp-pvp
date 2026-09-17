@@ -95,6 +95,28 @@ func TestCalculateValidatesInputs(t *testing.T) {
 	}
 }
 
+func TestEnchantmentProtectionFactor(t *testing.T) {
+	tests := []struct {
+		kind  ProtectionKind
+		level int
+		cause Cause
+		want  int
+	}{
+		{ProtectionAll, 4, CauseEntityAttack, 5},
+		{ProtectionFire, 4, CauseLava, 9},
+		{ProtectionFeatherFalling, 4, CauseFall, 18},
+		{ProtectionBlast, 4, CauseEntityExplosion, 11},
+		{ProtectionProjectile, 4, CauseProjectile, 11},
+		{ProtectionProjectile, 4, CauseEntityAttack, 0},
+		{ProtectionAll, 0, CauseEntityAttack, 0},
+	}
+	for _, test := range tests {
+		if got := EnchantmentProtectionFactor(test.kind, test.level, test.cause); got != test.want {
+			t.Fatalf("kind %d level %d cause %d: got %d, want %d", test.kind, test.level, test.cause, got, test.want)
+		}
+	}
+}
+
 func assertClose(t *testing.T, got, want float64) {
 	t.Helper()
 	if math.Abs(got-want) > 1e-12 {

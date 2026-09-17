@@ -29,6 +29,48 @@ const (
 	CauseFallingBlock
 )
 
+// ProtectionKind identifies a vanilla armour protection enchantment.
+type ProtectionKind uint8
+
+const (
+	ProtectionAll ProtectionKind = iota
+	ProtectionFire
+	ProtectionFeatherFalling
+	ProtectionBlast
+	ProtectionProjectile
+)
+
+// EnchantmentProtectionFactor returns the EPF contributed by one armour
+// enchantment for cause. It implements PMMP's ProtectionEnchantment formula
+// and applicability rules.
+func EnchantmentProtectionFactor(kind ProtectionKind, level int, cause Cause) int {
+	if level <= 0 {
+		return 0
+	}
+	modifier := 0.0
+	switch kind {
+	case ProtectionAll:
+		modifier = 0.75
+	case ProtectionFire:
+		if cause == CauseFire || cause == CauseFireTick || cause == CauseLava {
+			modifier = 1.25
+		}
+	case ProtectionFeatherFalling:
+		if cause == CauseFall {
+			modifier = 2.5
+		}
+	case ProtectionBlast:
+		if cause == CauseBlockExplosion || cause == CauseEntityExplosion {
+			modifier = 1.5
+		}
+	case ProtectionProjectile:
+		if cause == CauseProjectile {
+			modifier = 1.5
+		}
+	}
+	return int(math.Floor(float64(6+level*level) * modifier / 3))
+}
+
 // ReducedByArmor reports whether PMMP applies armour-point reduction for c.
 func (c Cause) ReducedByArmor() bool {
 	switch c {
